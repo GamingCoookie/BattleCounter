@@ -5,11 +5,6 @@ except ImportError:
 from classes import Player
 
 
-# print("Please enter the complete path to the file with the battles")
-# path_battles = input()
-# battles_data_file = open(path_battles, "r+")
-# battles_data = json.loads(battles_data_file.read())
-
 player1 = Player("")
 player2 = Player("")
 player3 = Player("")
@@ -111,7 +106,7 @@ player98 = Player("")
 player99 = Player("")
 player100 = Player("")
 
-players = (player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11,
+Players = (player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11,
            player12, player13, player14, player15, player16, player17, player18, player19, player20, player21,
            player22,
            player23, player24, player25, player26, player27, player28, player29, player30, player31, player32,
@@ -130,6 +125,10 @@ players = (player1, player2, player3, player4, player5, player6, player7, player
            player99,
            player100)
 
+path_battles = input("Please enter either the relative path or complete path to the battles file: ")
+battles_data_file = open(path_battles, "r+")
+battles_data = json.loads(battles_data_file.read())
+
 running = True
 i = 0
 previous_i = 0
@@ -146,34 +145,34 @@ while running:
               "save - saves list\n"
               "exit - exits the name adding")
     elif command == "showlist":
-        for name in players:
+        for name in Players:
             if len(name.name) >= 1:
-                print(players.index(name) + 1, name.name)
-            elif len(name.name) == 0 and players.index(name) == 0:
+                print(Players.index(name) + 1, name.name)
+            elif len(name.name) == 0 and Players.index(name) == 0:
                 print("The list is empty. Please add names")
     elif command == "add":
         if i < 100:
             if previous_i == 0:
                 name = input("Enter name:")
-                players[i].name = name
+                Players[i].name = name
                 i += 1
             else:
                 name = input("Enter name:")
-                players[i].name = name
+                Players[i].name = name
                 i = previous_i
         else:
             print("The list is already full!")
     elif command == "rm":
         index = int(input("Please enter the index number of the name to be removed.\n"
                           "You can find the indices with 'showlist':")) - 1
-        players[index].name = ""
+        Players[index].name = ""
         previous_i = i
         i = index
     elif command == "save":
         data = []
         path = "./saves/" + input("Please enter name of the file. It will be saved to a subdirectory: ") + ".json"
         file = open(path, "w+")
-        for player in players:
+        for player in Players:
             data.append(player.name)
 
         file_data = json.dumps(data)
@@ -185,13 +184,12 @@ while running:
         file = open(path, "r+")
         data = json.loads(file.read())
         for player in data:
-            players[data.index(player)].name = player
+            Players[data.index(player)].name = player
         print("Data has been read.")
     elif command == "exit":
         running = False
         break
 
-'''
 for battle in battles_data:
     for index in range(14):
         name = battle["BothTeams"][index]["Name"]
@@ -203,4 +201,3 @@ for battle in battles_data:
 for player in Players:
     if player.battles >= 1:
         print(player.name, player.battles)
-'''
