@@ -3,6 +3,7 @@ try:
 except ImportError:
     import json
 from Player import Player
+import os
 
 # Create player objects
 player1 = Player("")
@@ -195,19 +196,25 @@ def save():
 
 
 def load():
-    path = "./saves/" + input("Please enter the name of the file you want to load: ") + ".json"
-    file = open(path, "r+")
-    data = json.loads(file.read())
-    for player in data:
-        Players[data.index(player)].name = player
-    file.close()
-    print("Data has been read.")
+    if len(os.listdir("./saves/")) > 0:
+        print("Available files to load: \n")
+        for file in os.listdir("./saves/"):
+            print(file)
+        path = "./saves/" + input("Please enter the name of the file you want to load: ")
+        file = open(path, "r+")
+        data = json.loads(file.read())
+        for player in data:
+            Players[data.index(player)].name = player
+        file.close()
+        print("Data has been read.")
+    else:
+        print("No file to load.")
 
 
 def listexit():
     global running
     running = False
-    print("\n")
+    print("")
 
 
 # Switch-Case
