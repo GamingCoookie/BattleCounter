@@ -1,3 +1,10 @@
+try:
+    import simplejson as json
+except ImportError:
+    import json
+import os
+
+
 class Player:
     def __init__(self, name):
         self.name = name
@@ -136,7 +143,8 @@ def getnames():
                   "help - shows this list\n"
                   "showlist - shows the list of added names\n"
                   "add - adds a new name to the list\n"
-                  "rm - removes a name from the list\n")
+                  "rm - removes a name from the list\n"
+                  "save - saves list")
         elif command == "showlist":
             for name in players:
                 if len(name.name) >= 1:
@@ -158,3 +166,10 @@ def getnames():
             players[index].name = ""
             previous_i = i
             i = index
+        elif command == "save":
+            data = []
+            path = input("Please enter the complete path of the file you want to save it to: ")
+            file = open(path, "w+")
+            for player in players:
+                data.append(player.name)
+            file.write(json.dumps(data))
