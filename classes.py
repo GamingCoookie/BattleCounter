@@ -132,10 +132,11 @@ def getnames():
                player99,
                player100)
 
+    running = True
     i = 0
     previous_i = 0
     print("Use help to open the help menu")
-    while i <= 99:
+    while running:
         command = input("Enter Command:")
 
         if command == "help":
@@ -144,7 +145,8 @@ def getnames():
                   "showlist - shows the list of added names\n"
                   "add - adds a new name to the list\n"
                   "rm - removes a name from the list\n"
-                  "save - saves list")
+                  "save - saves list\n"
+                  "exit - exits the name adding")
         elif command == "showlist":
             for name in players:
                 if len(name.name) >= 1:
@@ -152,14 +154,17 @@ def getnames():
                 elif len(name.name) == 0 and players.index(name) == 0:
                     print("The list is empty. Please add names")
         elif command == "add":
-            if previous_i == 0:
-                name = input("Enter name:")
-                players[i].name = name
-                i += 1
+            if i < 100:
+                if previous_i == 0:
+                    name = input("Enter name:")
+                    players[i].name = name
+                    i += 1
+                else:
+                    name = input("Enter name:")
+                    players[i].name = name
+                    i = previous_i
             else:
-                name = input("Enter name:")
-                players[i].name = name
-                i = previous_i
+                print("The list is already full!")
         elif command == "rm":
             index = int(input("Please enter the index number of the name to be removed.\n"
                               "You can find the indices with 'showlist':"))-1
@@ -168,8 +173,15 @@ def getnames():
             i = index
         elif command == "save":
             data = []
-            path = input("Please enter the complete path of the file you want to save it to: ")
+            path = "./saves/" + input("Please enter name of the file. It will be saved to a subdirectory: ") + ".json"
             file = open(path, "w+")
             for player in players:
                 data.append(player.name)
-            file.write(json.dumps(data))
+
+            file_data = json.dumps(data)
+            file.write(file_data)
+            file.close()
+            print("Data has been written")
+        elif command == "exit":
+            running = False
+            break
