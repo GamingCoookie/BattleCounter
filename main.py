@@ -240,6 +240,7 @@ switch = {
 path_battles = input("Please enter either the relative path or complete path to the battles file: ")
 battles_data_file = open(path_battles, "r+")
 battles_data = json.loads(battles_data_file.read())
+battles_data_file.close()
 
 # CLI
 print("Use help to open the help menu")
