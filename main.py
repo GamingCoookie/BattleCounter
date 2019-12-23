@@ -137,12 +137,13 @@ while running:
     command = input("Enter Command:")
 
     if command == "help":
-        print("All possible commands:\n"
+        print("All possible commands:\n\n"
               "help - shows this list\n"
               "showlist - shows the list of added names\n"
               "add - adds a new name to the list\n"
               "rm - removes a name from the list\n"
               "save - saves list\n"
+              "load - loads list\n"
               "exit - exits the name adding")
     elif command == "showlist":
         for name in Players:
