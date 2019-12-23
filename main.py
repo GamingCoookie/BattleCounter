@@ -140,7 +140,7 @@ def showhelp():
           "rm - removes a name from the list\n"
           "save - saves list\n"
           "load - loads list\n"
-          "done - exits the name adding")
+          "done - exits the name adding\n")
 
 
 def showlist():
