@@ -183,6 +183,8 @@ def remove():
 
 
 def save():
+    if "saves" not in os.listdir("./"):
+        os.mkdir("saves")
     data = []
     path = "./saves/" + input("Please enter name of the file. It will be saved to a subdirectory: ") + ".json"
     file = open(path, "w+")
