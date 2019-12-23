@@ -1,4 +1,4 @@
-# WorldOfTanks_BattleCounter
+# WorldOfTanks-BattleCounter
 
 ## Why?
 
