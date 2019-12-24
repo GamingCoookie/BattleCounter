@@ -10,7 +10,6 @@ PlayersObjects = []
 Players = []
 running = True
 loading_file = True
-i = 0
 
 
 # all the functions
@@ -34,21 +33,14 @@ def showlist():
 
 
 def add():
-    global i
-    if i < 100:
         name = str(input("Enter name:"))
         Players.append(name)
-        i += 1
-    else:
-        print("The list is already full!")
 
 
 def remove():
-    global i
     index = int(input("Please enter the index number of the name to be removed.\n"
                       "You can find the indices with 'showlist':")) - 1
     del Players[index]
-    i -= 1
 
 
 def save():
