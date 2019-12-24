@@ -7,12 +7,15 @@ import os
 
 # initialize global variables
 PlayersObjects = []
-Players = []
 running = True
 loading_file = True
 
 
 # all the functions
+def sort(element):
+    return element.name
+
+
 def showhelp():
     print("All possible commands:\n\n"
           "help - shows this list\n"
@@ -25,31 +28,33 @@ def showhelp():
 
 
 def showlist():
-    for name in Players:
-        if len(Players) == 0:
+    for name in PlayersObjects:
+        if len(PlayersObjects) == 0:
             print("The list is empty. Please add names")
         else:
-            print(Players.index(name) + 1, name)
+            print(PlayersObjects.index(name) + 1, name.name)
 
 
 def add():
-        name = str(input("Enter name:"))
-        Players.append(name)
+    name = str(input("Enter name:"))
+    playerobj = Player(name)
+    PlayersObjects.append(playerobj)
 
 
 def remove():
     index = int(input("Please enter the index number of the name to be removed.\n"
                       "You can find the indices with 'showlist':")) - 1
-    del Players[index]
+    del PlayersObjects[index]
 
 
 def save():
     if "saves" not in os.listdir("./"):
         os.mkdir("saves")
     data = []
-    path = "./saves/" + input("Please enter name of the file. It will be saved to a subdirectory: ") + ".json"
+    path = "./saves/" + input("Please enter name of the file. It will be saved to a subdirectory called 'saves': ") + \
+           ".json"
     file = open(path, "w+")
-    for player in Players:
+    for player in PlayersObjects:
         data.append(player.name)
 
     file_data = json.dumps(data)
@@ -59,29 +64,37 @@ def save():
 
 
 def load():
-    if len(os.listdir("./saves/")) > 0:
-        load = True
-        print("Available files to load: \n")
-        for file in os.listdir("./saves/"):
-            print(file)
-        while load:
-            path = "./saves/" + input("Please enter the name of the file you want to load: ")
-            try:
-                file = open(path, "r+")
-                data = json.loads(file.read())
-                for player in data:
-                    Players[data.index(player)].name = player
-                file.close()
-            except FileNotFoundError:
-                print("The given file doesn't exist. Please try again.")
-        print("Data has been read.")
-    else:
-        print("No file to load.")
+    decision = input("Loading a list erases the current list, do you want to continue? Y/N: ")
+    if decision == "Y" or "y":
+        if len(os.listdir("./saves/")) > 0:
+            load = True
+            print("Available files to load: \n")
+            for file in os.listdir("./saves/"):
+                print(file)
+            while load:
+                path = "./saves/" + input("Please enter the name of the file you want to load: ")
+                try:
+                    file = open(path, "r+")
+                    data = json.loads(file.read())
+                    PlayersObjects.clear()
+                    for player in data:
+                        playerobj = Player(player)
+                        PlayersObjects.append(playerobj)
+                    file.close()
+                    load = False
+                except FileNotFoundError:
+                    print("The given file doesn't exist. Please try again.")
+            print("Data has been read.")
+        else:
+            print("No file to load.")
 
 
-def listexit():
+def done():
     global running
     running = False
+    decision = input("Do you want to sort the list alphanumerical? Y/N ")
+    if decision == "Y" or "y":
+        PlayersObjects.sort(key=sort)
     print("")
 
 
@@ -92,14 +105,14 @@ def switchcase(case):
 
 
 switch = {
-        "help": showhelp,
-        "showlist": showlist,
-        "add": add,
-        "rm": remove,
-        "save": save,
-        "load": load,
-        "done": listexit
-    }
+    "help": showhelp,
+    "showlist": showlist,
+    "add": add,
+    "rm": remove,
+    "save": save,
+    "load": load,
+    "done": done
+}
 
 # Actual program code!
 # Load the replays json file
@@ -113,7 +126,6 @@ while loading_file:
     except FileNotFoundError:
         print("The given file doesn't exist. Please try again.")
 
-
 # CLI
 print("Use help to open the help menu")
 while running:
@@ -122,12 +134,6 @@ while running:
         switchcase(command)
     else:
         print("Command not found, please try again.")
-
-# Instantiate the player objects
-for player in Players:
-    playerobj = Player(player)
-    PlayersObjects.append(playerobj)
-
 
 # Determine battle amount
 for battle in battles_data:
