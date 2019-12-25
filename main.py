@@ -2,8 +2,12 @@ try:
     import simplejson as json
 except ImportError:
     import json
+import os, sys
+from PyQt5.QtWidgets import *
 from Player import Player
-import os
+from Button import Button
+from Application import Application
+
 
 # initialize global variables
 PlayersObjects = []
@@ -116,6 +120,12 @@ switch = {
 
 # Actual program code!
 # Load the replays json file
+app = QApplication(sys.argv)
+window = Application()
+
+sys.exit(app.exec_())
+
+'''
 while loading_file:
     path_battles = input("Please enter either the relative path or complete path to the battles file: ")
     try:
@@ -150,3 +160,4 @@ for player in PlayersObjects:
 
 # Just here so the program doesn't terminate instantly
 input("\nPress enter to terminate the program")
+'''
