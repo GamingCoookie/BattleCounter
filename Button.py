@@ -29,12 +29,14 @@ class Button:
         if v == "Save":
             self.opensave()
         if v == "Load":
-            self.load()
+            self.openload()
         if v == "Done Save":
             self.save()
+        if v == "Done Load":
+            self.load()
 
     def opensave(self):
-        self.onscreen[2].setVisible(True)
+        self.onscreen[2].show()
 
     def save(self):
         if "saves" not in os.listdir("./"):
@@ -61,29 +63,24 @@ class Button:
         file.write(file_data)
         file.close()
 
-        self.onscreen[2].setVisible(False)
+        self.onscreen[2].hide()
 
+    def openload(self):
+        self.onscreen[3].show()
 
-        '''
-        decision = input("Loading a list erases the current list, do you want to continue? Y/N: ")
-        if decision == "Y" or "y":
-            if len(os.listdir("./saves/")) > 0:
-                load = True
-                print("Available files to load: \n")
-                for file in os.listdir("./saves/"):
-                    print(file)
-                while load:
-                    path = "./saves/" + input("Please enter the name of the file you want to load: ")
-                    try:
-                        file = open(path, "r+")
-                        data = json.loads(file.read())
-                        for player in data:
-                            print(player)
-                        file.close()
-                        load = False
-                    except FileNotFoundError:
-                        print("The given file doesn't exist. Please try again.")
-                print("Data has been read.")
-            else:
-                print("No file to load.")
-        '''
+    def load(self):
+        filename = self.input.text()
+        path = "./saves/" + filename + ".json"
+        self.loadfile(path)
+        self.onscreen[3].hide()
+
+    def loadfile(self, path):
+        try:
+            file = open(path, "r+")
+            data = json.loads(file.read())
+            self.list.clear()
+            for player in data:
+                self.list.addItem(player)
+            file.close()
+        except FileNotFoundError:
+            self.onscreen[4].setText("File not found. Please try again.")

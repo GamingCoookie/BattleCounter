@@ -13,7 +13,6 @@ class Application(QWidget):
 
     def createapp(self):
         buttons = ("Add", "Remove", "Load", "Save", "Done")
-        elements = ()
 
         window = QVBoxLayout()
         layouttop = QWidget()
@@ -27,20 +26,41 @@ class Application(QWidget):
         layoutsave = QWidget()
         savev = QVBoxLayout(layoutsave)
         saveh = QHBoxLayout()
-        pathinput = QLineEdit()
-        savelable = QLabel()
-        doneb = Button("Done Save", pathinput, namelist, elements)
+        savepathinput = QLineEdit()
+        savelabel = QLabel()
+        dones = Button("Done Save", savepathinput, namelist, None)
 
-        savelable.setText("Please enter name of the file. It will be saved to a subdirectory called 'saves'")
-        savev.addWidget(savelable)
+        savelabel.setText("Please enter name of the file. It will be saved to a subdirectory called 'saves'")
+        savev.addWidget(savelabel)
         savev.addLayout(saveh)
-        saveh.addWidget(pathinput)
-        saveh.addWidget(doneb.button)
+        saveh.addWidget(savepathinput)
+        saveh.addWidget(dones.button)
 
-        layoutsave.setVisible(False)
+        layoutsave.hide()
         layoutsave.setWindowTitle("WoT-BattleCounter")
 
-        elements = (layouttop, layoutbottom, layoutsave, savelable)
+        layoutload = QWidget()
+        loadv = QVBoxLayout(layoutload)
+        loadh = QHBoxLayout()
+        loadpathinput = QLineEdit()
+        loadlabel = QLabel()
+        donel = Button("Done Load", loadpathinput, namelist, None)
+
+        loadlabel.setText("Please enter name of the file. Loading a list will replace the current list. \n"
+                          "Close this window to not load a list.")
+        loadv.addWidget(loadlabel)
+        loadv.addLayout(loadh)
+        loadh.addWidget(loadpathinput)
+        loadh.addWidget(donel.button)
+
+        layoutload.hide()
+        layoutload.setMinimumWidth(375)
+        layoutload.setWindowTitle("WoT-BattleCounter")
+
+        elements = (layouttop, layoutbottom, layoutsave, layoutload, loadlabel)
+
+        dones.onscreen = elements
+        donel.onscreen = elements
 
         additemdiv.addWidget(inputline)
         for button in buttons:
