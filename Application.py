@@ -13,27 +13,48 @@ class Application(QWidget):
 
     def createapp(self):
         buttons = ("Add", "Remove", "Load", "Save", "Done")
+        elements = ()
 
         window = QVBoxLayout()
-        additemdiv = QHBoxLayout()
-        listbuttonsdiv = QHBoxLayout()
+        layouttop = QWidget()
+        layoutbottom = QWidget()
+        additemdiv = QHBoxLayout(layouttop)
+        listbuttonsdiv = QHBoxLayout(layoutbottom)
         buttonsdiv = QVBoxLayout()
         inputline = QLineEdit()
         namelist = QListWidget()
 
-        additemdiv.addWidget(inputline)
-        listbuttonsdiv.addWidget(namelist)
+        layoutsave = QWidget()
+        savev = QVBoxLayout(layoutsave)
+        saveh = QHBoxLayout()
+        pathinput = QLineEdit()
+        savelable = QLabel()
+        doneb = Button("Done Save", pathinput, namelist, elements)
 
+        savelable.setText("Please enter name of the file. It will be saved to a subdirectory called 'saves'")
+        savev.addWidget(savelable)
+        savev.addLayout(saveh)
+        saveh.addWidget(pathinput)
+        saveh.addWidget(doneb.button)
+
+        layoutsave.setVisible(False)
+        layoutsave.setWindowTitle("WoT-BattleCounter")
+
+        elements = (layouttop, layoutbottom, layoutsave, savelable)
+
+        additemdiv.addWidget(inputline)
         for button in buttons:
-            buttonobject = Button(button, inputline, namelist)
+            buttonobject = Button(button, inputline, namelist, elements)
 
             if button == "Add":
                 additemdiv.addWidget(buttonobject.button)
             else:
                 buttonsdiv.addWidget(buttonobject.button)
 
-        window.addLayout(additemdiv)
-        window.addLayout(listbuttonsdiv)
+        window.addWidget(layouttop)
+        window.addWidget(layoutbottom)
+
+        listbuttonsdiv.addWidget(namelist)
         listbuttonsdiv.addLayout(buttonsdiv)
 
         self.setLayout(window)
