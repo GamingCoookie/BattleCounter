@@ -3,7 +3,7 @@ try:
 except ImportError:
     import json
 import os
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QPushButton
 from Player import Player
 # global list
 PlayerObjects = []
