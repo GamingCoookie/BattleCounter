@@ -4,19 +4,17 @@ import re
 import struct
 import tkinter as tk
 import tkinter.ttk as ttk
+import ttkthemes as ttkt
 from tkinter import filedialog, messagebox
-
-from ttkthemes import ThemedStyle
-
 from Player import Player
 
 
 class App(tk.Tk):
     def __init__(self, master=None):
         super().__init__(master)
-        self.style = ThemedStyle(self)
+        self.style = ttkt.ThemedStyle(self)
         self.style.set_theme('elegance')
-        self.iconbitmap(r'C:\Users\katri\Desktop\Programm Projekte\WorldOfTanks_BattleCounter\app.ico')
+        self.iconbitmap(r'data\app.ico')
 
         self.title('WoT Battle Counter')
         self.menu_bar = tk.Menu(self)
