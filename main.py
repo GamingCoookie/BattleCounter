@@ -1,10 +1,5 @@
-import sys
-from PyQt5.QtWidgets import QApplication
-from Application import Application
+from Application import App
 
-# Start the app
-app = QApplication(sys.argv)
-window = Application()
-
-sys.exit(app.exec_())
-
+if __name__ == '__main__':
+    # Start the app
+    App().create_app()
