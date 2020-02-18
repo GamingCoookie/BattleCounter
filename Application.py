@@ -1,33 +1,32 @@
-import json
-import os
-import re
-import struct
-import tkinter as tk
-import tkinter.ttk as ttk
-import ttkthemes as ttkt
-from tkinter import filedialog, messagebox
+from json import dumps, loads
+from os import path, listdir
+from re import compile, search
+from struct import unpack
+from ttkthemes import ThemedStyle
+from tkinter import filedialog, messagebox, Menu, Listbox, Label, StringVar, IntVar, HORIZONTAL, Tk
+from tkinter.ttk import Frame, Entry, Button, Scrollbar, Progressbar
 from Player import Player
 
 
-class App(tk.Tk):
+class App(Tk):
     def __init__(self, master=None):
         super().__init__(master)
-        self.style = ttkt.ThemedStyle(self)
+        self.style = ThemedStyle(self)
         self.style.set_theme('elegance')
         self.iconbitmap(r'data\app.ico')
 
         self.title('WoT Battle Counter')
-        self.menu_bar = tk.Menu(self)
-        self.content = ttk.Frame(self)
-        self.entry = ttk.Entry(self.content)
-        self.player_list = tk.Listbox(self.content)
-        self.count_button = ttk.Button(self)
-        self.scrollbar = ttk.Scrollbar(self.content, orient='vertical')
-        self.progress_frame = ttk.Frame(self)
-        self.progress_info = tk.Label(self.progress_frame)
-        self.progress_info_var = tk.StringVar()
-        self.progress_bar = ttk.Progressbar(self.progress_frame)
-        self.progress_bar_var = tk.IntVar()
+        self.menu_bar = Menu(self)
+        self.content = Frame(self)
+        self.entry = Entry(self.content)
+        self.player_list = Listbox(self.content)
+        self.count_button = Button(self)
+        self.scrollbar = Scrollbar(self.content, orient='vertical')
+        self.progress_frame = Frame(self)
+        self.progress_info = Label(self.progress_frame)
+        self.progress_info_var = StringVar()
+        self.progress_bar = Progressbar(self.progress_frame)
+        self.progress_bar_var = IntVar()
 
         self.PlayerObjects = []
         self.replays = []
@@ -65,7 +64,7 @@ class App(tk.Tk):
         self.progress_frame.pack(side='left', fill='both', pady=5)
         self.progress_info.config(height=1, textvariable=self.progress_info_var)
         self.progress_info.pack(side='top', fill='both')
-        self.progress_bar.config(mode='determinate', orient=tk.HORIZONTAL, length=220, variable=self.progress_bar_var)
+        self.progress_bar.config(mode='determinate', orient=HORIZONTAL, length=220, variable=self.progress_bar_var)
         self.progress_bar.pack(side='bottom', fill='both')
         self.progress_bar_var.set([0])
 
@@ -88,28 +87,28 @@ class App(tk.Tk):
                 self.PlayerObjects.remove(player)
 
     def open_skirmish_files(self):
-        path = tk.filedialog.askdirectory()
+        path = filedialog.askdirectory()
         self.replays = self.list_dir(path)
         self.count_button.state(['!disabled'])
 
     def save_list(self):
-        file_path = tk.filedialog.asksaveasfilename(defaultextension='.json')
+        file_path = filedialog.asksaveasfilename(defaultextension='.json')
         players = list()
         for player in self.PlayerObjects:
             players.append(player.name)
-        if os.path.exists(file_path):
+        if path.exists(file_path):
             f = open(file_path, 'w')
         else:
             f = open(file_path, 'x')
         f.seek(0)
-        f.write(json.dumps(players))
+        f.write(dumps(players))
 
     def load_list(self):
-        file_path = tk.filedialog.askopenfilename(filetypes=[('json-file', '*.json'), ('all files', '*.*')])
-        if os.path.isfile(file_path):
+        file_path = filedialog.askopenfilename(filetypes=[('json-file', '*.json'), ('all files', '*.*')])
+        if path.isfile(file_path):
             self.player_list.delete(0, 'end')
             f = open(file_path, 'r')
-            players = json.loads(f.read())
+            players = loads(f.read())
             for name in players:
                 self.player_list.insert('end', name)
                 player_obj = Player(name)
@@ -123,23 +122,23 @@ class App(tk.Tk):
                   'Replay decoding works due to code from: \n' \
                   'Phalynx WoT-Replay-To-JSON application on Github'
 
-        tk.messagebox.showinfo('About', message, default='ok')
+        messagebox.showinfo('About', message, default='ok')
 
     def list_dir(self, path):
-        entries = os.listdir(path)
-        re_replay = re.compile('\.wotreplay')
-        re_file = re.compile('\.')
+        entries = listdir(path)
+        re_replay = compile('\.wotreplay')
+        re_file = compile('\.')
         replays = []
         # recursive function for searching in subdirectories for .wotreplay files and putting them into a list
         for entry in entries:
-            if not re.search(re_file, entry):
+            if not search(re_file, entry):
                 new_path = path + "/" + entry
                 new_replays = self.list_dir(new_path)
                 for replay in new_replays:
                     replays.append(replay)
-            elif re.search(re_replay, entry):
+            elif search(re_replay, entry):
                 replays.append((path + '/' + entry))
-            elif not re.search(re_replay, entry) and re.search(re_file, entry):
+            elif not search(re_replay, entry) and search(re_file, entry):
                 continue
         return replays
 
@@ -160,12 +159,12 @@ class App(tk.Tk):
             f = open(filename_source, 'rb')
             f.seek(8)
             size = f.read(4)
-            data_block_size = struct.unpack('I', size)[0]
+            data_block_size = unpack('I', size)[0]
             f.seek(12)
             my_block = f.read(int(data_block_size))
 
             # Convert binary data into a json and then into an iterable tuple
-            json_replay = json.loads(my_block)
+            json_replay = loads(my_block)
             players_dict = [(v, k) for (k, v) in dict.items(json_replay['vehicles'])]
 
             # Extract names and append to a list
