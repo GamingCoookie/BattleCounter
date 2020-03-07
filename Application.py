@@ -3,9 +3,10 @@ from os import path, listdir
 from re import compile, search
 from struct import unpack
 from ttkthemes import ThemedStyle
-from tkinter import filedialog, messagebox, Menu, Listbox, Label, StringVar, IntVar, HORIZONTAL, Tk
-from tkinter.ttk import Frame, Entry, Button, Scrollbar, Progressbar
+from tkinter import filedialog, messagebox, Menu, Listbox, Tk
+from tkinter.ttk import Frame, Entry, Button, Scrollbar
 from Player import Player
+import concurrent.futures
 
 
 class App(Tk):
@@ -22,14 +23,10 @@ class App(Tk):
         self.player_list = Listbox(self.content)
         self.count_button = Button(self)
         self.scrollbar = Scrollbar(self.content, orient='vertical')
-        self.progress_frame = Frame(self)
-        self.progress_info = Label(self.progress_frame)
-        self.progress_info_var = StringVar()
-        self.progress_bar = Progressbar(self.progress_frame)
-        self.progress_bar_var = IntVar()
 
         self.PlayerObjects = []
         self.replays = []
+        self.player_names = []
 
     def create_app(self):
         # Config menu entries and attach them
@@ -59,14 +56,6 @@ class App(Tk):
         self.count_button.config(text='Count!', command=self.decode_replays)
         self.count_button.pack(side='right', padx=20, pady=10)
         self.count_button.state(['disabled'])
-
-        # Config the progress frame + bar + label
-        self.progress_frame.pack(side='left', fill='both', pady=5)
-        self.progress_info.config(height=1, textvariable=self.progress_info_var)
-        self.progress_info.pack(side='top', fill='both')
-        self.progress_bar.config(mode='determinate', orient=HORIZONTAL, length=220, variable=self.progress_bar_var)
-        self.progress_bar.pack(side='bottom', fill='both')
-        self.progress_bar_var.set([0])
 
         # Config the window
         self.mainloop()
@@ -143,19 +132,41 @@ class App(Tk):
         return replays
 
     def decode_replays(self):
-        # setup progress bar
-        self.progress_bar.config(maximum=len(self.replays))
-        self.progress_bar_var = 0
+        replay_list_1 = [self.replays[x] for x in range(0, round(len(self.replays)/4))]
+        replay_list_2 = [self.replays[x] for x in range(round(len(self.replays)/4), round(len(self.replays)/4)*2)]
+        replay_list_3 = [self.replays[x] for x in range(round(len(self.replays)/4)*2, round(len(self.replays)/4)*3)]
+        replay_list_4 = [self.replays[x] for x in range(round(len(self.replays)/4)*3, len(self.replays))]
 
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            t1 = executor.submit(self.convert_binary_data, replay_list_1)
+            t2 = executor.submit(self.convert_binary_data, replay_list_2)
+            t3 = executor.submit(self.convert_binary_data, replay_list_3)
+            t4 = executor.submit(self.convert_binary_data, replay_list_4)
+
+        for replay in t1.result():
+            self.player_names.append(replay)
+        for replay in t2.result():
+            self.player_names.append(replay)
+        for replay in t3.result():
+            self.player_names.append(replay)
+        for replay in t4.result():
+            self.player_names.append(replay)
+
+        # COUNTING TIME!
+        for name in self.player_names:
+            for player in self.PlayerObjects:
+                if name == player.name:
+                    player.battles += 1
+
+        # Insert names together with battle count back into the list
+        self.player_list.delete(0, 'end')
+        for player in self.PlayerObjects:
+            self.player_list.insert('end', (player.name, player.battles))
+
+    def convert_binary_data(self, replays):
         player_names = list()
-
-        for replay in range(len(self.replays)):
-            # update progress bar + info
-            self.progress_info_var.set((str(replay+1) + '/' + str(len(self.replays))))
-            self.progress_bar.step()
-            self.update_idletasks()
-
-            filename_source = self.replays[replay]
+        for replay in range(len(replays)):
+            filename_source = replays[replay]
             f = open(filename_source, 'rb')
             f.seek(8)
             size = f.read(4)
@@ -171,14 +182,4 @@ class App(Tk):
             for player_id in players_dict:
                 player_name = player_id[0]['name']
                 player_names.append(player_name)
-
-        # COUNTING TIME!
-        for name in player_names:
-            for player in self.PlayerObjects:
-                if name == player.name:
-                    player.battles += 1
-
-        # Insert names together with battle count back into the list
-        self.player_list.delete(0, 'end')
-        for player in self.PlayerObjects:
-            self.player_list.insert('end', (player.name, player.battles))
+        return player_names
