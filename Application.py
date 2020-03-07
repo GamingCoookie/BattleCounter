@@ -72,21 +72,27 @@ class App(Tk):
         self.entry.delete(0, 'end')
         playerobj = Player(name)
         self.PlayerObjects.append(playerobj)
-        if self.sort_variable:
+        if self.sort_variable == 1:
             self.PlayerObjects.sort(key=lambda player: player.name.lower())
             self.player_list.delete(0, 'end')
             for player in self.PlayerObjects:
-                self.player_list.insert('end', player.name)
+                self.player_list.insert('end', f'{self.PlayerObjects.index(player)} {player.name}')
         else:
-            self.player_list.insert('end', name)
+            self.player_list.delete(0, 'end')
+            for player in self.PlayerObjects:
+                self.player_list.insert('end', f'{self.PlayerObjects.index(player)} {player.name}')
 
     def remove_player(self, event):
         select = self.player_list.curselection()
         name = self.player_list.get(select)
         self.player_list.delete(select)
         for player in self.PlayerObjects:
-            if name == player.name:
+            if name.split()[1] == player.name:
                 self.PlayerObjects.remove(player)
+
+        self.player_list.delete(0, 'end')
+        for player in self.PlayerObjects:
+            self.player_list.insert('end', f'{self.PlayerObjects.index(player)} {player.name}')
 
     def open_skirmish_files(self):
         path = filedialog.askdirectory()
