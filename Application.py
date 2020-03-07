@@ -118,9 +118,10 @@ class App(Tk):
             f = open(file_path, 'r')
             players = loads(f.read())
             for name in players:
-                self.player_list.insert('end', name)
                 player_obj = Player(name)
                 self.PlayerObjects.append(player_obj)
+            for player in self.PlayerObjects:
+                self.player_list.insert('end', f'{self.PlayerObjects.index(player)} {player.name}')
         else:
             pass
 
@@ -180,7 +181,10 @@ class App(Tk):
         # Insert names together with battle count back into the list
         self.player_list.delete(0, 'end')
         for player in self.PlayerObjects:
-            self.player_list.insert('end', (player.name, player.battles))
+            if player.battles > 0:
+                self.player_list.insert('end', (self.PlayerObjects.index(player), player.name, player.battles))
+            else:
+                continue
 
     def convert_binary_data(self, replays):
         player_names = list()
