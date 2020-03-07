@@ -72,7 +72,7 @@ class App(Tk):
         self.entry.delete(0, 'end')
         playerobj = Player(name)
         self.PlayerObjects.append(playerobj)
-        if self.sort_variable == 1:
+        if self.sort_variable.get() == 1:
             self.PlayerObjects.sort(key=lambda player: player.name.lower())
             self.player_list.delete(0, 'end')
             for player in self.PlayerObjects:
