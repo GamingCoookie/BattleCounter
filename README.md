@@ -13,7 +13,7 @@ Or you could use it to check how many times you have played with a friend or met
 
 Either open the main.py with at least Python 3.7 or if you are on Windows use the provided WoTBattleCounter.exe in the releases section.
 
-#### Make sure that all the Replays you want to use are complete and you didn't exist the battle prior.
+#### Make sure that all the Replays you want to use are complete and you didn't exit the battle prior.
 
 Then you click on "Open skirmish files" and point it to the folder where you have your replays saved. It also checks subfolders so you could have replays
 neatly sorted into days, weeks, months and years and just point it at the "month" folder to see how many battles were played by player x in that month.
