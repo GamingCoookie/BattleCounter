@@ -3,10 +3,10 @@ from os import path, listdir
 from re import compile, search
 from struct import unpack
 from ttkthemes import ThemedStyle
-from tkinter import filedialog, messagebox, Menu, Listbox, Tk
-from tkinter.ttk import Frame, Entry, Button, Scrollbar
+from tkinter import filedialog, messagebox, Menu, Listbox, Tk, IntVar
+from tkinter.ttk import Frame, Entry, Button, Scrollbar, Checkbutton
 from Player import Player
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 
 
 class App(Tk):
@@ -23,14 +23,16 @@ class App(Tk):
         self.player_list = Listbox(self.content)
         self.count_button = Button(self)
         self.scrollbar = Scrollbar(self.content, orient='vertical')
-
+        self.buttons_frame = Frame(self)
+        self.sort_button = Checkbutton(self.buttons_frame)
+        self.sort_variable = IntVar(self)
         self.PlayerObjects = []
         self.replays = []
         self.player_names = []
 
     def create_app(self):
         # Config menu entries and attach them
-        self.menu_bar.add_command(label='Open skirmish files', command=self.open_skirmish_files)
+        self.menu_bar.add_command(label='Open replay files', command=self.open_skirmish_files)
         self.menu_bar.add_command(label='Open list', command=self.load_list)
         self.menu_bar.add_command(label='Save list', command=self.save_list)
         self.menu_bar.add_command(label='About', command=self.about)
@@ -54,18 +56,29 @@ class App(Tk):
 
         # Config button at the bottom
         self.count_button.config(text='Count!', command=self.decode_replays)
-        self.count_button.pack(side='right', padx=20, pady=10)
+        self.count_button.pack(side='right', padx=10, pady=10)
         self.count_button.state(['disabled'])
+
+        # Config the progress frame + bar + label
+        self.buttons_frame.pack(side='left', fill='both', pady=5, padx=5, expand=1)
+        self.sort_button.config(text="Sort the list", variable=self.sort_variable)
+        self.sort_button.pack(anchor='nw', pady=3, padx=3)
 
         # Config the window
         self.mainloop()
 
     def add_player(self, event):
         name = self.entry.get()
-        self.player_list.insert('end', name)
         self.entry.delete(0, 'end')
         playerobj = Player(name)
         self.PlayerObjects.append(playerobj)
+        if self.sort_variable:
+            self.PlayerObjects.sort(key=lambda player: player.name.lower())
+            self.player_list.delete(0, 'end')
+            for player in self.PlayerObjects:
+                self.player_list.insert('end', player.name)
+        else:
+            self.player_list.insert('end', name)
 
     def remove_player(self, event):
         select = self.player_list.curselection()
@@ -137,7 +150,7 @@ class App(Tk):
         replay_list_3 = [self.replays[x] for x in range(round(len(self.replays)/4)*2, round(len(self.replays)/4)*3)]
         replay_list_4 = [self.replays[x] for x in range(round(len(self.replays)/4)*3, len(self.replays))]
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor() as executor:
             t1 = executor.submit(self.convert_binary_data, replay_list_1)
             t2 = executor.submit(self.convert_binary_data, replay_list_2)
             t3 = executor.submit(self.convert_binary_data, replay_list_3)
