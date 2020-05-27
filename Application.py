@@ -35,6 +35,7 @@ class App(Tk):
         self.menu_bar.add_command(label='Open replay files', command=self.open_skirmish_files)
         self.menu_bar.add_command(label='Open list', command=self.load_list)
         self.menu_bar.add_command(label='Save list', command=self.save_list)
+        self.menu_bar.add_command(label='Export to file', command=self.export_to_file)
         self.menu_bar.add_command(label='About', command=self.about)
         self.config(menu=self.menu_bar)
 
@@ -95,42 +96,64 @@ class App(Tk):
             self.player_list.insert('end', f'{self.PlayerObjects.index(player)} {player.name}')
 
     def open_skirmish_files(self):
-        path = filedialog.askdirectory()
-        self.replays = self.list_dir(path)
+        directory_path = filedialog.askdirectory()
+        self.replays = self.list_dir(directory_path)
         self.count_button.state(['!disabled'])
 
     def save_list(self):
         file_path = filedialog.asksaveasfilename(defaultextension='.json')
-        players = list()
-        for player in self.PlayerObjects:
-            players.append(player.name)
-        if path.exists(file_path):
-            f = open(file_path, 'w')
-        else:
-            f = open(file_path, 'x')
-        f.seek(0)
-        f.write(dumps(players))
+        print(file_path)
+        if file_path is not None:
+            players = list()
+            for player in self.PlayerObjects:
+                players.append(player.name)
+            if path.exists(file_path) and path.isfile(file_path):
+                f = open(file_path, 'w')
+            elif path.exists(file_path):
+                f = open(file_path, 'x')
+            else:
+                return
+            f.seek(0)
+            f.write(dumps(players))
 
     def load_list(self):
         file_path = filedialog.askopenfilename(filetypes=[('json-file', '*.json'), ('all files', '*.*')])
-        if path.isfile(file_path):
-            self.player_list.delete(0, 'end')
-            f = open(file_path, 'r')
-            players = loads(f.read())
-            for name in players:
-                player_obj = Player(name)
-                self.PlayerObjects.append(player_obj)
+        if file_path is not None:
+            if path.isfile(file_path):
+                self.player_list.delete(0, 'end')
+                f = open(file_path, 'r')
+                players = loads(f.read())
+                for name in players:
+                    player_obj = Player(name)
+                    self.PlayerObjects.append(player_obj)
+                for player in self.PlayerObjects:
+                    self.player_list.insert('end', f'{self.PlayerObjects.index(player)} {player.name}')
+
+    def export_to_file(self):
+        file_path = filedialog.asksaveasfilename(defaultextension='.txt')
+        if file_path is not None:
+            if path.isfile(file_path):
+                f = open(file_path, 'w')
+            elif path.exists(file_path):
+                f = open(file_path, 'x')
+            else:
+                return
+            data = str()
             for player in self.PlayerObjects:
-                self.player_list.insert('end', f'{self.PlayerObjects.index(player)} {player.name}')
-        else:
-            pass
+                if player.battles >= 100:
+                    data += f'{player.battles}  {player.name} \n'
+                elif player.battles >= 10:
+                    data += f'{player.battles}   {player.name} \n'
+                elif player.battles > 0:
+                    data += f'{player.battles}   {player.name} \n'
+            f.seek(0)
+            f.write(data)
 
     def about(self):
-        message = 'WorldOfTanks-BattleCounter 1.0 \n' \
+        message = 'WorldOfTanks-BattleCounter 1.1.1 \n' \
                   '\n' \
                   'Replay decoding works due to code from: \n' \
                   'Phalynx WoT-Replay-To-JSON application on Github'
-
         messagebox.showinfo('About', message, default='ok')
 
     def list_dir(self, path):
