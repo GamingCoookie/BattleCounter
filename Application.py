@@ -3,11 +3,13 @@ from os import path, listdir
 from re import compile, search
 from struct import unpack
 from ttkthemes import ThemedStyle
-from tkinter import filedialog, messagebox, Menu, Listbox, Tk, IntVar, Toplevel
-from tkinter.ttk import Frame, Entry, Button, Scrollbar, Checkbutton, Labelframe, Label, Style
+from tkinter import filedialog, messagebox, Menu, Listbox, Tk, IntVar, Toplevel, HORIZONTAL
+from tkinter.ttk import Frame, Entry, Button, Scrollbar, Checkbutton, Labelframe, Label, Style, Progressbar
 from Player import Player
-from concurrent.futures import ThreadPoolExecutor
+from threading import Thread
 from functools import partial
+from queue import Queue
+from time import sleep
 
 
 def validate_config_entry(text):
@@ -49,6 +51,7 @@ class App(Tk):
         self.scrollbar = Scrollbar(self.content)
         self.buttons_frame = Frame(self)
         self.sort_button = Checkbutton(self.buttons_frame)
+        self.progressbar = Progressbar(self.buttons_frame)
         self.sort_variable = IntVar(self)
         self.PlayerObjects = []
         self.replays = []
@@ -83,15 +86,17 @@ class App(Tk):
         self.player_list.pack(side='left', fill='both', expand=1)
         self.player_list.bind('<Delete>', self.remove_player)
 
-        # Config button at the bottom
-        self.count_button.config(text='Count!', command=self.decode_replays)
+        # Count button at the bottom
+        self.count_button.config(text='Count!', command=Thread(target=self.decode_replays).start)
         self.count_button.pack(side='right', padx=10, pady=10)
         self.count_button.state(['disabled'])
 
-        # Config button frame + button + entry
+        # Config button frame + button + progressbar
         self.buttons_frame.pack(side='left', fill='both', pady=5, padx=5, expand=1)
         self.sort_button.config(text="Sort the list", variable=self.sort_variable)
         self.sort_button.pack(anchor='nw', pady=3, padx=3)
+        self.progressbar.config(length=360, mode='indeterminate', orient=HORIZONTAL, maximum=10)
+        self.progressbar.pack(anchor='e', pady=3, padx=3)
 
         # Config the style
         Style().configure('TEntry', background='white')
@@ -107,17 +112,17 @@ class App(Tk):
     def add_player(self, event):
         name = self.entry.get()
         self.entry.delete(0, 'end')
-        playerobj = Player(name)
-        self.PlayerObjects.append(playerobj)
+        player_obj = Player(name)
+        self.PlayerObjects.append(player_obj)
         if self.sort_variable.get() == 1:
             self.PlayerObjects.sort(key=lambda player: player.name.lower())
             self.player_list.delete(0, 'end')
             for player in self.PlayerObjects:
-                self.player_list.insert('end', f'{self.PlayerObjects.index(player)+self.offset+1} {player.name}')
+                self.player_list.insert('end', (self.PlayerObjects.index(player)+self.offset+1, player.name))
         else:
             self.player_list.delete(0, 'end')
             for player in self.PlayerObjects:
-                self.player_list.insert('end', f'{self.PlayerObjects.index(player+self.offset+1)} {player.name}')
+                self.player_list.insert('end', (self.PlayerObjects.index(player)+self.offset+1, player.name))
 
     def remove_player(self, event):
         select = self.player_list.curselection()
@@ -129,7 +134,7 @@ class App(Tk):
 
         self.player_list.delete(0, 'end')
         for player in self.PlayerObjects:
-            self.player_list.insert('end', f'{self.PlayerObjects.index(player)+self.offset+1} {player.name}')
+            self.player_list.insert('end', (self.PlayerObjects.index(player)+self.offset+1, player.name))
 
     def open_skirmish_files(self):
         directory_path = filedialog.askdirectory()
@@ -140,7 +145,6 @@ class App(Tk):
 
     def save_list(self):
         file_path = filedialog.asksaveasfilename(defaultextension='.json')
-        print(file_path)
         if not path.exists(file_path):
             return
         players = list()
@@ -163,7 +167,7 @@ class App(Tk):
                 player_obj = Player(name)
                 self.PlayerObjects.append(player_obj)
             for player in self.PlayerObjects:
-                self.player_list.insert('end', f'{self.PlayerObjects.index(player)+self.offset+1} {player.name}')
+                self.player_list.insert('end', (self.PlayerObjects.index(player)+self.offset+1, player.name))
 
     def export_to_file(self):
         file_path = filedialog.asksaveasfilename(defaultextension='.txt')
@@ -180,7 +184,7 @@ class App(Tk):
             elif player.battles >= 10:
                 data += f'{player.battles}   {player.name} \n'
             elif player.battles > 0:
-                data += f'{player.battles}   {player.name} \n'
+                data += f'{player.battles}    {player.name} \n'
         f.seek(0)
         f.write(data)
 
@@ -203,41 +207,64 @@ class App(Tk):
         return replays
 
     def decode_replays(self):
-        replay_list_1 = [self.replays[x] for x in range(0, round(len(self.replays)/4))]
-        replay_list_2 = [self.replays[x] for x in range(round(len(self.replays)/4), round(len(self.replays)/4)*2)]
-        replay_list_3 = [self.replays[x] for x in range(round(len(self.replays)/4)*2, round(len(self.replays)/4)*3)]
-        replay_list_4 = [self.replays[x] for x in range(round(len(self.replays)/4)*3, len(self.replays))]
+        self.progressbar.start()
+        thread_queue = Queue()
+        replay_list_1 = [self.replays[x] for x in range(0, round(len(self.replays) / 4))]
+        replay_list_2 = [self.replays[x] for x in range(round(len(self.replays) / 4), round(len(self.replays) / 4) * 2)]
+        replay_list_3 = [self.replays[x] for x in range(round(len(self.replays) / 4) * 2, round(len(self.replays) / 4) * 3)]
+        replay_list_4 = [self.replays[x] for x in range(round(len(self.replays) / 4) * 3, len(self.replays))]
 
-        with ThreadPoolExecutor() as executor:
-            t1 = executor.submit(self.convert_binary_data, replay_list_1)
-            t2 = executor.submit(self.convert_binary_data, replay_list_2)
-            t3 = executor.submit(self.convert_binary_data, replay_list_3)
-            t4 = executor.submit(self.convert_binary_data, replay_list_4)
+        thread_1 = Thread(target=self.convert_binary_data, args=(replay_list_1, thread_queue))
+        thread_2 = Thread(target=self.convert_binary_data, args=(replay_list_2, thread_queue))
+        thread_3 = Thread(target=self.convert_binary_data, args=(replay_list_3, thread_queue))
+        thread_4 = Thread(target=self.convert_binary_data, args=(replay_list_4, thread_queue))
 
-        for replay in t1.result():
-            self.player_names.append(replay)
-        for replay in t2.result():
-            self.player_names.append(replay)
-        for replay in t3.result():
-            self.player_names.append(replay)
-        for replay in t4.result():
-            self.player_names.append(replay)
+        threads = (thread_1, thread_2, thread_3, thread_4)
+
+        for thread in threads:
+            thread.start()
+
+        sleep(1)
+        if self.listen_for_result(threads):
+            self.player_names = thread_queue.get()
+            for name in thread_queue.get():
+                self.player_names.append(name)
+            for name in thread_queue.get():
+                self.player_names.append(name)
+            for name in thread_queue.get():
+                self.player_names.append(name)
 
         # COUNTING TIME!
         for name in self.player_names:
             for player in self.PlayerObjects:
-                if name == player.name:
-                    player.battles += 1
+                if name[0] == player.name:
+                    player.battles += name[1]
 
         # Insert names together with battle count back into the list
         self.player_list.delete(0, 'end')
         for player in self.PlayerObjects:
             if player.battles > 0:
-                self.player_list.insert('end', (self.PlayerObjects.index(player), player.name, player.battles))
+                self.player_list.insert('end',
+                                        (self.PlayerObjects.index(player)+self.offset+1, player.name, player.battles))
             else:
                 continue
+        self.progressbar.stop()
 
-    def convert_binary_data(self, replays):
+    def listen_for_result(self, threads):
+        # Check if all replay results have come in
+        alive_threads = 0
+        for thread in threads:
+            thread.join(0.1)
+        for thread in threads:
+            if thread.is_alive():
+                print("thread not ded")
+                alive_threads += 1
+        if alive_threads > 0:
+            if self.listen_for_result(threads):
+                return True
+        return True
+
+    def convert_binary_data(self, replays, queue):
         player_names = list()
         for replay in range(len(replays)):
             filename_source = replays[replay]
@@ -250,24 +277,18 @@ class App(Tk):
 
             # Convert binary data into a json and then into an iterable tuple
             json_replay = loads(my_block)
-            print(json_replay)
             players_dict = [(v, k) for (k, v) in dict.items(json_replay['vehicles'])]
 
             # Extract names and append to a list
             for player_id in players_dict:
-                i = 0
                 player_name = player_id[0]['name']
                 if json_replay['battleType'] == 20:
-                    while i < self.skirmish_value:
-                        player_names.append(player_name)
-                        i += 1
+                    player_names.append((player_name, self.skirmish_value))
                 elif json_replay['battleType'] == 13:
-                    while i < self.clan_war_value:
-                        player_names.append(player_name)
-                        i += 1
+                    player_names.append((player_name, self.clan_war_value))
                 else:
-                    player_names.append(player_name)
-        return player_names
+                    player_names.append((player_name, 1))
+        queue.put(player_names)
 
     def open_config_window(self):
         config_window = Toplevel(self)
@@ -328,8 +349,8 @@ class App(Tk):
         buttons_frame.pack(anchor='sw', fill='both', expand=0)
 
         apply_button = Button(buttons_frame)
-        apply_button.config(text='Apply', command=partial(self.config_apply, offset_entry, skirmish_entry, advance_entry,
-                                                          clan_war_entry))
+        apply_button.config(text='Apply', command=partial(self.config_apply, offset_entry, skirmish_entry, advance_entry
+                                                          , clan_war_entry))
         apply_button.pack(side='right', padx=5, pady=5)
 
         cancel_button = Button(buttons_frame)
@@ -341,17 +362,17 @@ class App(Tk):
                                                                         skirmish_entry, advance_entry,
                                                                         clan_war_entry, config_window))
         ok_button.pack(side='right', padx=5, pady=5)
-        
+
         offset_entry.insert('end', self.offset)
         skirmish_entry.insert('end', self.skirmish_value)
         advance_entry.insert('end', self.advance_value)
         clan_war_entry.insert('end', self.clan_war_value)
 
     def config_ok(self, offset, skirmish, advance, clan_war, window):
-        self.offset = offset
-        self.skirmish_value = skirmish
-        self.advance_value = advance
-        self.clan_war_value = clan_war
+        self.offset = int(offset.get())
+        self.skirmish_value = int(skirmish.get())
+        self.advance_value = int(advance.get())
+        self.clan_war_value = int(clan_war.get())
         data = {'offset': offset.get(), 'skirmish_value': skirmish.get(), 'advance_value': advance.get(),
                 'clan_war_value': clan_war.get()}
         if path.isfile(r'config.json'):
@@ -363,10 +384,10 @@ class App(Tk):
         window.destroy()
 
     def config_apply(self, offset, skirmish, advance, clan_war):
-        self.offset = offset
-        self.skirmish_value = skirmish
-        self.advance_value = advance
-        self.clan_war_value = clan_war
+        self.offset = int(offset.get())
+        self.skirmish_value = int(skirmish.get())
+        self.advance_value = int(advance.get())
+        self.clan_war_value = int(clan_war.get())
         data = {'offset': offset.get(), 'skirmish_value': skirmish.get(), 'advance_value': advance.get(),
                 'clan_war_value': clan_war.get()}
         if path.isfile(r'config.json'):
@@ -377,14 +398,13 @@ class App(Tk):
         f.write(dumps(data))
 
     def load_config(self):
-        print('loading config...')
         if path.isfile(r'config.json'):
             f = open(r'config.json', 'r')
             data = loads(f.read())
             print(data)
-            self.offset = data['offset']
-            self.skirmish_value = data['skirmish_value']
-            self.advance_value = data['advance_value']
-            self.clan_war_value = data['clan_war_value']
+            self.offset = int(data['offset'])
+            self.skirmish_value = int(data['skirmish_value'])
+            self.advance_value = int(data['advance_value'])
+            self.clan_war_value = int(data['clan_war_value'])
         else:
             pass
